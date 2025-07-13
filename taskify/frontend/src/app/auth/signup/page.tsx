@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
+import { register } from '../../api';
 
 export default function SignupPage() {
   const [form, setForm] = useState({
@@ -21,7 +22,7 @@ export default function SignupPage() {
     setSuccess("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.firstName || !form.lastName || !form.email || !form.password || !form.confirmPassword) {
       setError("All fields are required.");
@@ -31,9 +32,22 @@ export default function SignupPage() {
       setError("Passwords do not match.");
       return;
     }
-    setSuccess("Sign up successful! (This is a placeholder)");
-    setError("");
-    // Here you would send the data to the backend
+    try {
+      const result = await register(form.email, form.password, form.firstName, form.lastName);
+      if (result.userId) {
+        setSuccess("Sign up successful! User ID: " + result.userId);
+        setError("");
+      } else if (result.message) {
+        setError(result.message);
+        setSuccess("");
+      } else {
+        setError("Unknown error occurred.");
+        setSuccess("");
+      }
+    } catch (err) {
+      setError("Network or server error.");
+      setSuccess("");
+    }
   };
 
   return (

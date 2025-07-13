@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
+import { login } from '../../api';
 
 export default function LoginPage() {
   const [form, setForm] = useState({
@@ -17,15 +18,30 @@ export default function LoginPage() {
     setSuccess("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.email || !form.password) {
       setError("All fields are required.");
       return;
     }
-    setSuccess("Sign in successful! (This is a placeholder)");
-    setError("");
-    // Here you would send the data to the backend
+    try {
+      const result = await login(form.email, form.password);
+      if (result.access_token) {
+        setSuccess("Sign in successful!");
+        setError("");
+        // Optionally store the token for authenticated requests
+        // localStorage.setItem('token', result.access_token);
+      } else if (result.message) {
+        setError(result.message);
+        setSuccess("");
+      } else {
+        setError("Unknown error occurred.");
+        setSuccess("");
+      }
+    } catch (err) {
+      setError("Network or server error.");
+      setSuccess("");
+    }
   };
 
   return (
