@@ -2,8 +2,10 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { register } from '../../api';
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -15,6 +17,7 @@ export default function SignupPage() {
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -35,8 +38,13 @@ export default function SignupPage() {
     try {
       const result = await register(form.email, form.password, form.firstName, form.lastName);
       if (result.userId) {
-        setSuccess("Sign up successful! User ID: " + result.userId);
+        setSuccess("Sign up successful!");
         setError("");
+        setShowModal(true);
+        setTimeout(() => {
+          setShowModal(false);
+          router.push("/auth/login");
+        }, 1300);
       } else if (result.message) {
         setError(result.message);
         setSuccess("");
@@ -50,13 +58,41 @@ export default function SignupPage() {
     }
   };
 
+  const handleModalClose = () => {
+    setShowModal(false);
+    router.push("/auth/login");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-purple-100 px-4">
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent backdrop-blur-md">
+          <div
+            className="bg-gradient-to-br from-white via-blue-50 to-blue-100 rounded-2xl shadow-2xl p-10 max-w-sm w-full text-center border border-blue-100 relative animate-modalBounceIn"
+            style={{ animationDelay: '0s', animationFillMode: 'forwards' }}
+          >
+            <div className="flex justify-center mb-4">
+              <span className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 shadow-md animate-iconPop">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              </span>
+            </div>
+            <h2 className="text-3xl font-extrabold mb-2 text-gray-800">Sign Up Successful!</h2>
+            <p className="mb-8 text-gray-700 text-lg">Your account has been created.<br/>Please log in to continue.</p>
+          </div>
+        </div>
+      )}
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
         .animate-fadeInUp { animation: fadeInUp 0.7s cubic-bezier(0.4,0,0.2,1) both; }
         @keyframes dividerGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
         .animate-dividerGrow { animation: dividerGrow 0.7s cubic-bezier(0.4,0,0.2,1) both; transform-origin: center; }
+        @keyframes modalPopUp { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .animate-modalPopUp { animation: modalPopUp 0.3s cubic-bezier(0.4,0,0.2,1) forwards; }
+        @keyframes modalBounceIn { 0% { opacity: 0; transform: scale(0.7); } 60% { opacity: 1; transform: scale(1.05); } 80% { transform: scale(0.97); } 100% { opacity: 1; transform: scale(1); } }
+        .animate-modalBounceIn { animation: modalBounceIn 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
+        @keyframes iconPop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        .animate-iconPop { animation: iconPop 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
       `}</style>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col md:flex-row overflow-hidden border border-gray-100">
         {/* Left: Image */}

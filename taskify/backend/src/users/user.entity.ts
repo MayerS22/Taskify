@@ -19,4 +19,16 @@ export class User {
 
   @Column({ type: 'text', nullable: true })
   profile: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  phone: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  country: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  resetToken: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  resetTokenExpiry: Date | null;
 } 

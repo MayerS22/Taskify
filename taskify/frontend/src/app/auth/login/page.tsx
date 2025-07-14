@@ -2,8 +2,10 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { login } from '../../api';
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -11,6 +13,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -22,30 +26,79 @@ export default function LoginPage() {
     e.preventDefault();
     if (!form.email || !form.password) {
       setError("All fields are required.");
+      setShowErrorModal(true);
+      setTimeout(() => setShowErrorModal(false), 1300);
       return;
     }
     try {
       const result = await login(form.email, form.password);
       if (result.access_token) {
-        setSuccess("Sign in successful!");
         setError("");
-        // Optionally store the token for authenticated requests
-        // localStorage.setItem('token', result.access_token);
+        setShowModal(true); // Show modal on success
+        setTimeout(() => {
+          setShowModal(false);
+          router.push("/");
+        }, 1300);
       } else if (result.message) {
         setError(result.message);
         setSuccess("");
+        setShowErrorModal(true);
+        setTimeout(() => setShowErrorModal(false), 1300);
       } else {
         setError("Unknown error occurred.");
         setSuccess("");
+        setShowErrorModal(true);
+        setTimeout(() => setShowErrorModal(false), 1300);
       }
     } catch (err) {
       setError("Network or server error.");
       setSuccess("");
+      setShowErrorModal(true);
+      setTimeout(() => setShowErrorModal(false), 1300);
     }
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    router.push("/");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-purple-100 px-4">
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent backdrop-blur-md">
+          <div
+            className="bg-gradient-to-br from-white via-blue-50 to-blue-100 rounded-2xl shadow-2xl p-10 max-w-sm w-full text-center border border-blue-100 relative animate-modalBounceIn"
+            style={{ animationDelay: '0s', animationFillMode: 'forwards' }}
+          >
+            <div className="flex justify-center mb-4">
+              <span className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 shadow-md animate-iconPop">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              </span>
+            </div>
+            <h2 className="text-3xl font-extrabold mb-2 text-gray-800">Sign In Successful!</h2>
+            <p className="mb-8 text-gray-700 text-lg">You have signed in successfully.<br/>Welcome back!</p>
+          </div>
+        </div>
+      )}
+      {/* Error Modal */}
+      {showErrorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-transparent backdrop-blur-md">
+          <div
+            className="bg-gradient-to-br from-white via-red-50 to-red-100 rounded-2xl shadow-2xl p-10 max-w-sm w-full text-center border border-red-200 relative animate-modalBounceIn"
+            style={{ animationDelay: '0s', animationFillMode: 'forwards' }}
+          >
+            <div className="flex justify-center mb-4">
+              <span className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 shadow-md animate-iconPop">
+                <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </span>
+            </div>
+            <h2 className="text-2xl font-extrabold mb-2 text-gray-800">Error</h2>
+            <p className="mb-8 text-gray-700 text-lg">{error}</p>
+          </div>
+        </div>
+      )}
       <style>{`
         @keyframes fadeInLeft { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: none; } }
         .animate-fadeInLeft { animation: fadeInLeft 1.1s cubic-bezier(0.4,0,0.2,1) both; }
@@ -53,6 +106,10 @@ export default function LoginPage() {
         .animate-fadeInRight { animation: fadeInRight 1.1s cubic-bezier(0.4,0,0.2,1) both; }
         @keyframes dividerGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
         .animate-dividerGrow { animation: dividerGrow 0.7s cubic-bezier(0.4,0,0.2,1) both; transform-origin: center; }
+        @keyframes modalBounceIn { 0% { opacity: 0; transform: scale(0.7); } 60% { opacity: 1; transform: scale(1.05); } 80% { transform: scale(0.97); } 100% { opacity: 1; transform: scale(1); } }
+        .animate-modalBounceIn { animation: modalBounceIn 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
+        @keyframes iconPop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        .animate-iconPop { animation: iconPop 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
       `}</style>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col md:flex-row-reverse overflow-hidden border border-gray-100">
         {/* Right: Image */}
@@ -115,6 +172,9 @@ export default function LoginPage() {
                   <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 0c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z" /></svg>
                 )}
               </button>
+            </div>
+            <div className="flex justify-end mt-1">
+              <a href="/auth/forgot-password" className="text-blue-600 hover:underline text-sm font-medium">Forgot Password?</a>
             </div>
           </div>
           <button
