@@ -20,6 +20,30 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Features
+
+- User authentication (login, signup)
+- Password reset (forgot password, reset via email link)
+- Success and error modals for user feedback
+- Styled with Tailwind CSS
+
+## Authentication & Password Reset Flow
+
+- **Sign Up:** Create a new account with your name, email, and password.
+- **Login:** Sign in with your email and password. Error and success messages are shown as modals.
+- **Forgot Password:**
+  1. Click "Forgot Password?" on the login page.
+  2. Enter your email and submit. A modal will confirm if a reset link was sent.
+  3. Check your email for a reset link (in development, see backend console for Ethereal preview URL).
+- **Reset Password:**
+  1. Click the link in your email to open the reset password page.
+  2. Enter a new password and confirm. Success and error messages are shown as modals.
+
+## Development
+
+- The frontend expects the backend to run on [http://localhost:3001](http://localhost:3001).
+- Update API URLs in the code if your backend runs elsewhere.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
