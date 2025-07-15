@@ -74,7 +74,15 @@ export default function HomePage() {
           </nav>
         </div>
         <div className="px-4 pb-6">
-          <Link href="/auth/login" className="block w-full text-center py-2 rounded-lg font-semibold text-red-400 bg-neutral-800 hover:bg-red-900 transition">Logout</Link>
+          <button
+            onClick={() => {
+              localStorage.removeItem("access_token");
+              window.location.href = "/";
+            }}
+            className="block w-full text-center py-2 rounded-lg font-semibold text-red-400 bg-neutral-800 hover:bg-red-900 transition"
+          >
+            Logout
+          </button>
         </div>
       </aside>
 

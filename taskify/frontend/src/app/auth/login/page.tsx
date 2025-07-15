@@ -42,6 +42,7 @@ export default function LoginPage() {
     try {
       const result = await login(form.email, form.password);
       if (result.access_token) {
+        localStorage.setItem("access_token", result.access_token);
         setError("");
         setShowModal(true); // Show modal on success
         setTimeout(() => {
