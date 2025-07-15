@@ -1,11 +1,41 @@
 "use client";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { getProfile } from "../api";
+// Add Heroicons for icons
+import { XMarkIcon, PlusCircleIcon, CheckCircleIcon, TrashIcon, PencilSquareIcon, ExclamationTriangleIcon } from "@heroicons/react/24/solid";
+import { Task } from "./components/TaskCard";
+import TaskList from "./components/TaskList";
+import TaskModal from "./components/TaskModal";
+import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
+
+const CATEGORIES = ["Work", "Personal", "Other"];
+
+// Helper for category badge color
+const categoryBadgeColor = (category: string) => {
+  switch (category) {
+    case "Work": return "bg-blue-600";
+    case "Personal": return "bg-green-600";
+    case "Other": return "bg-purple-600";
+    default: return "bg-gray-500";
+  }
+};
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  // To-do state
+  const [showModal, setShowModal] = useState(false);
+  const [todos, setTodos] = useState<{ id: number; title: string; description: string; category: string; completed: boolean }[]>([]);
+  const [form, setForm] = useState({ title: "", description: "", category: CATEGORIES[0] });
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [formError, setFormError] = useState("");
+  const [editModal, setEditModal] = useState<{ open: boolean; taskId: number | null }>({ open: false, taskId: null });
+  const [editForm, setEditForm] = useState({ title: "", description: "", category: CATEGORIES[0] });
+  const [editFormError, setEditFormError] = useState("");
+  const editModalRef = useRef<HTMLDivElement>(null);
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; taskId: number | null }>({ open: false, taskId: null });
+  const deleteModalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -27,6 +57,51 @@ export default function HomePage() {
     fetchUser();
   }, []);
 
+  // Close modal on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        setShowModal(false);
+      }
+    }
+    if (showModal) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showModal]);
+
+  // Close edit modal on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (editModal.open && editModalRef.current && !editModalRef.current.contains(event.target as Node)) {
+        setEditModal({ open: false, taskId: null });
+      }
+    }
+    if (editModal.open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [editModal]);
+
+  // Close delete modal on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (deleteModal.open && deleteModalRef.current && !deleteModalRef.current.contains(event.target as Node)) {
+        setDeleteModal({ open: false, taskId: null });
+      }
+    }
+    if (deleteModal.open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [deleteModal]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
@@ -36,6 +111,73 @@ export default function HomePage() {
   }
 
   const userInitials = user && user.firstName && user.lastName ? user.firstName[0] + user.lastName[0] : "?";
+
+  // To-do handlers
+  const handleAddTodo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title.trim()) {
+      setFormError("Title is required");
+      return;
+    }
+    setTodos([
+      ...todos,
+      {
+        id: Date.now(),
+        title: form.title.trim(),
+        description: form.description.trim(),
+        category: form.category,
+        completed: false,
+      },
+    ]);
+    setForm({ title: "", description: "", category: CATEGORIES[0] });
+    setShowModal(false);
+    setFormError("");
+  };
+
+  const handleToggleComplete = (id: number) => {
+    setTodos(todos.map(todo =>
+      todo.id === id ? { ...todo, completed: !todo.completed } : todo
+    ));
+  };
+
+  const handleDelete = (id: number) => {
+    setTodos(todos.filter(todo => todo.id !== id));
+  };
+
+  // Open edit modal and prefill form
+  const handleEditClick = (task: typeof todos[0]) => {
+    setEditForm({ title: task.title, description: task.description, category: task.category });
+    setEditFormError("");
+    setEditModal({ open: true, taskId: task.id });
+  };
+
+  // Edit submit handler
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editForm.title.trim()) {
+      setEditFormError("Title is required");
+      return;
+    }
+    setTodos(todos.map(todo =>
+      todo.id === editModal.taskId
+        ? { ...todo, title: editForm.title.trim(), description: editForm.description.trim(), category: editForm.category }
+        : todo
+    ));
+    setEditModal({ open: false, taskId: null });
+    setEditForm({ title: "", description: "", category: CATEGORIES[0] });
+    setEditFormError("");
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setDeleteModal({ open: true, taskId: id });
+  };
+
+  const confirmDelete = () => {
+    if (deleteModal.taskId !== null) {
+      setTodos(todos.filter(todo => todo.id !== deleteModal.taskId));
+    }
+    setDeleteModal({ open: false, taskId: null });
+  };
 
   return (
     <div className="min-h-screen flex bg-black">
@@ -111,9 +253,46 @@ export default function HomePage() {
         <main className="flex-1 flex flex-col items-center justify-center p-10 animate-fadeInUp">
           <h1 className="text-4xl font-extrabold text-white mb-2">Welcome to your dashboard{user && user.firstName ? `, ${user.firstName}` : ""}!</h1>
           <p className="text-gray-300 text-lg mb-4">Get started by creating a new task or exploring your lists.</p>
-          <button className="bg-white text-black px-8 py-3 rounded-2xl font-extrabold text-lg shadow-xl border-2 border-transparent hover:bg-neutral-700 hover:text-white hover:border-white focus:outline-none focus:ring-4 focus:ring-neutral-400 focus:ring-offset-2 transition-all duration-200 mb-2" disabled>
+          <button
+            className="bg-white text-black px-8 py-3 rounded-2xl font-extrabold text-lg shadow-xl border-2 border-transparent hover:bg-neutral-700 hover:text-white hover:border-white focus:outline-none focus:ring-4 focus:ring-neutral-400 focus:ring-offset-2 transition-all duration-200 mb-2"
+            onClick={() => setShowModal(true)}
+          >
             + Create Task
           </button>
+          {/* Task Overview */}
+          <div className="w-full max-w-2xl mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">Recent Tasks</h3>
+              <a href="/tasks" className="text-indigo-400 hover:underline text-sm font-semibold">View all</a>
+            </div>
+            <TaskList
+              tasks={todos.slice(-5).reverse()}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+              onToggleComplete={handleToggleComplete}
+            />
+          </div>
+          {/* Create/Edit Modal */}
+          <TaskModal
+            open={showModal || editModal.open}
+            mode={showModal ? "create" : "edit"}
+            form={showModal ? form : editForm}
+            setForm={showModal ? setForm : setEditForm}
+            formError={showModal ? formError : editFormError}
+            setFormError={showModal ? setFormError : setEditFormError}
+            categories={CATEGORIES}
+            onClose={() => {
+              setShowModal(false);
+              setEditModal({ open: false, taskId: null });
+            }}
+            onSubmit={showModal ? handleAddTodo : handleEditSubmit}
+          />
+          {/* Delete Confirmation Modal */}
+          <DeleteConfirmationModal
+            open={deleteModal.open}
+            onClose={() => setDeleteModal({ open: false, taskId: null })}
+            onConfirm={confirmDelete}
+          />
         </main>
       </div>
     </div>
