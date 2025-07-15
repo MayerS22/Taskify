@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { forgotPassword } from "../../api";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -16,12 +17,7 @@ export default function ForgotPasswordPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      await res.json(); // Always show modal regardless of response
+      const res = await forgotPassword(email);
       setShowModal(true);
       setTimeout(() => {
         setShowModal(false);

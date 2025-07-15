@@ -23,4 +23,22 @@ export async function getProfile(token: string) {
     },
   });
   return res.json();
+}
+
+export async function forgotPassword(email: string) {
+  const res = await fetch('http://localhost:3001/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  return res.json();
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  const res = await fetch('http://localhost:3001/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword }),
+  });
+  return res.json();
 } 

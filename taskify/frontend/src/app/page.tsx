@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
+import PublicHomePage from "./homepage/public";
 
 export default function RootPage() {
-  redirect("/homepage");
-  return null;
+  return <PublicHomePage />;
 }

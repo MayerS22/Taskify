@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { resetPassword } from "../../api";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -34,17 +35,12 @@ export default function ResetPasswordPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, newPassword: form.newPassword }),
-      });
-      const data = await res.json();
-      if (res.ok && data.message) {
+      const data = await resetPassword(token, form.newPassword);
+      if (data && data.message && !data.message.toLowerCase().includes('error')) {
         setSuccess(data.message);
         setTimeout(() => router.push("/auth/login"), 2000);
       } else {
-        setError(data.message || "Something went wrong.");
+        setError((data && data.message) || "Something went wrong.");
         setShowErrorModal(true);
         setTimeout(() => setShowErrorModal(false), 1300);
       }
