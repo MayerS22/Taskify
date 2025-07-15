@@ -1,9 +1,12 @@
 {
-  "dependencies": {
-    "@nestjs/jwt": "^11.0.0",
-    "@nestjs/passport": "^11.0.5",
-    "nodemailer": "^7.0.5",
-    "passport": "^0.7.0",
-    "passport-jwt": "^4.0.1"
-  }
+  "name": "taskify-monorepo",
+  "private": true,
+  "scripts": {
+    "dev:backend": "npm --workspace backend run start:dev",
+    "dev:frontend": "npm --workspace frontend run dev"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
 }
