@@ -1,22 +1,30 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { getProfile } from "../api";
 
 export default function HomePage() {
-  // Placeholder user info; replace with real data when backend is connected
   const [loading, setLoading] = useState(true);
-  const user = {
-    firstName: "User",
-    lastName: "Name",
-    email: "user@example.com",
-    profilePic: null, // null means use initials
-  };
-  const userInitials = user.firstName[0] + user.lastName[0];
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    // Simulate loading user data
-    const timer = setTimeout(() => setLoading(false), 900);
-    return () => clearTimeout(timer);
+    const fetchUser = async () => {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const data = await getProfile(token);
+        setUser(data);
+        console.log('Fetched user:', data); // Debug log
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
   }, []);
 
   if (loading) {
@@ -26,6 +34,8 @@ export default function HomePage() {
       </div>
     );
   }
+
+  const userInitials = user && user.firstName && user.lastName ? user.firstName[0] + user.lastName[0] : "?";
 
   return (
     <div className="min-h-screen flex bg-black">
@@ -52,7 +62,7 @@ export default function HomePage() {
         <div>
           <div className="flex flex-col items-center gap-2 pt-8 pb-6 border-b border-neutral-800">
             {/* Profile Picture */}
-            {user.profilePic ? (
+            {user && user.profilePic ? (
               <img src={user.profilePic} alt="Profile" className="w-20 h-20 rounded-full object-cover border-4 border-blue-800 shadow profile-anim transition-transform duration-200" />
             ) : (
               <span className="w-20 h-20 rounded-full flex items-center justify-center text-4xl font-extrabold text-white bg-indigo-600 border-4 border-indigo-800 shadow select-none profile-anim transition-transform duration-200" style={{fontFamily: 'Inter, sans-serif'}}>
@@ -60,9 +70,9 @@ export default function HomePage() {
               </span>
             )}
             {/* User Name */}
-            <div className="text-lg font-semibold text-white mt-2">{user.firstName} {user.lastName}</div>
+            <div className="text-lg font-semibold text-white mt-2">{user ? `${user.firstName} ${user.lastName}` : "User"}</div>
             {/* User Email */}
-            <div className="text-sm text-gray-400">{user.email}</div>
+            <div className="text-sm text-gray-400">{user ? user.email : "user@example.com"}</div>
           </div>
           <div className="px-8 py-6 text-2xl font-extrabold text-white tracking-tight">Taskify</div>
           <nav className="flex flex-col gap-2 mt-4 px-4">
@@ -90,7 +100,7 @@ export default function HomePage() {
       <div className="flex-1 ml-64 flex flex-col min-h-screen">
         {/* Header */}
         <header className="w-full h-20 bg-neutral-900 shadow flex items-center justify-between px-10 border-b border-neutral-800 sticky top-0 z-10">
-          <div className="text-2xl font-bold text-white">Welcome back, {user.firstName}!</div>
+          <div className="text-2xl font-bold text-white">Welcome, {user ? user.firstName : "User"}!</div>
           <div className="flex items-center gap-4">
             <span className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-extrabold text-white bg-indigo-600 border-2 border-indigo-800 shadow select-none profile-anim transition-transform duration-200" style={{fontFamily: 'Inter, sans-serif'}}>
               {userInitials}
@@ -99,7 +109,7 @@ export default function HomePage() {
         </header>
         {/* Main Content */}
         <main className="flex-1 flex flex-col items-center justify-center p-10 animate-fadeInUp">
-          <h1 className="text-4xl font-extrabold text-white mb-2">Welcome to your dashboard!</h1>
+          <h1 className="text-4xl font-extrabold text-white mb-2">Welcome to your dashboard{user && user.firstName ? `, ${user.firstName}` : ""}!</h1>
           <p className="text-gray-300 text-lg mb-4">Get started by creating a new task or exploring your lists.</p>
           <button className="bg-white text-black px-8 py-3 rounded-2xl font-extrabold text-lg shadow-xl border-2 border-transparent hover:bg-neutral-700 hover:text-white hover:border-white focus:outline-none focus:ring-4 focus:ring-neutral-400 focus:ring-offset-2 transition-all duration-200 mb-2" disabled>
             + Create Task

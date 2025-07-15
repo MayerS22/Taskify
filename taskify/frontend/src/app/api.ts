@@ -16,12 +16,23 @@ export async function register(email: string, password: string, firstName: strin
   return res.json();
 }
 
-export async function getProfile(token: string) {
+export type User = {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  profile: string | null;
+  phone?: string | null;
+  country?: string | null;
+};
+
+export async function getProfile(token: string): Promise<User> {
   const res = await fetch('http://localhost:3001/users/me', {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
   });
+  if (!res.ok) throw new Error('Failed to fetch user profile');
   return res.json();
 }
 
