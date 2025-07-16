@@ -8,5 +8,9 @@
   "workspaces": [
     "backend",
     "frontend"
-  ]
+  ],
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "sqlite3": "^5.1.7"
+  }
 }
