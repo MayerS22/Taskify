@@ -8,6 +8,8 @@ import TaskModal from "../homepage/components/TaskModal";
 import DeleteConfirmationModal from "../homepage/components/DeleteConfirmationModal";
 import NotificationToast from "../homepage/components/NotificationToast";
 import { useRouter } from "next/navigation";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
 const CATEGORIES = ["Work", "Personal", "Other"];
 
@@ -25,6 +27,7 @@ export default function MyTasksPage() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; open: boolean }>({ message: '', type: 'success', open: false });
   const currentTab: string = 'tasks';
   const router = useRouter();
+  const sensors = useSensors(useSensor(PointerSensor));
 
   useEffect(() => {
     const fetchUserAndTasks = async () => {
@@ -119,6 +122,18 @@ export default function MyTasksPage() {
     setDeleteModal({ open: false, taskId: null });
   };
 
+  // DnD handler
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      setTodos((items) => {
+        const oldIndex = items.findIndex(t => t.id === active.id);
+        const newIndex = items.findIndex(t => t.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
@@ -179,25 +194,30 @@ export default function MyTasksPage() {
           </button>
         </header>
         <main className="flex-1 flex flex-col items-center justify-start p-10 animate-fadeInUp">
-          <TaskList
-            tasks={todos}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-            onToggleComplete={async (id: number) => {
-              const todo = todos.find(t => t.id === id);
-              if (!todo) return;
-              try {
-                const token = localStorage.getItem("access_token");
-                if (!token) throw new Error("Not authenticated");
-                let newStatus: 'todo' | 'in_progress' | 'completed' = todo.status === 'completed' ? 'todo' : 'completed';
-                const updated = await updateTask(id, { ...todo, status: newStatus }, token);
-                setTodos(todos.map(t => t.id === id ? updated : t));
-              } catch (err) {
-                // Optionally show error
-              }
-            }}
-            variant="mytasks"
-          />
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
+              <TaskList
+                tasks={todos}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+                onToggleComplete={async (id: number) => {
+                  const todo = todos.find(t => t.id === id);
+                  if (!todo) return;
+                  try {
+                    const token = localStorage.getItem("access_token");
+                    if (!token) throw new Error("Not authenticated");
+                    let newStatus: 'todo' | 'in_progress' | 'completed' = todo.status === 'completed' ? 'todo' : 'completed';
+                    const updated = await updateTask(id, { ...todo, status: newStatus }, token);
+                    setTodos(todos.map(t => t.id === id ? updated : t));
+                  } catch (err) {
+                    // Optionally show error
+                  }
+                }}
+                variant="mytasks"
+                dnd
+              />
+            </SortableContext>
+          </DndContext>
         </main>
         <TaskModal
           open={showModal || editModal.open}

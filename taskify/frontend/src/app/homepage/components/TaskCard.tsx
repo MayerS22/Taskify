@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircleIcon, TrashIcon, PencilSquareIcon, ClockIcon, RocketLaunchIcon, CheckBadgeIcon } from "@heroicons/react/24/solid";
+import { CheckCircleIcon, TrashIcon, PencilSquareIcon, ClockIcon, RocketLaunchIcon, CheckBadgeIcon, ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/solid";
 
 const categoryBadgeColor = (category: string) => {
   switch (category) {
@@ -34,6 +34,8 @@ interface TaskCardProps {
   onToggleComplete: (id: number) => void;
   variant?: 'default' | 'mytasks' | 'dashboard';
   style?: React.CSSProperties;
+  onMoveUp?: (() => void) | null;
+  onMoveDown?: (() => void) | null;
 }
 
 const statusBadge = (status: Task["status"]) => {
@@ -45,11 +47,11 @@ const statusBadge = (status: Task["status"]) => {
   }
 };
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleComplete, variant = 'default', style }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleComplete, variant = 'default', style, onMoveUp, onMoveDown }) => {
   if (variant === 'mytasks') {
     return (
       <div
-        className="relative group bg-gradient-to-br from-neutral-800 via-neutral-900 to-black rounded-2xl shadow-2xl border border-neutral-700 p-6 transition-transform transform hover:scale-[1.025] hover:shadow-indigo-700/30 flex flex-col gap-3 min-w-[320px] w-full cursor-pointer"
+        className="relative group bg-gradient-to-br from-neutral-800 via-neutral-900 to-black rounded-2xl shadow-2xl border border-neutral-700 p-6 transition-transform transform hover:scale-[1.025] hover:shadow-indigo-700/30 flex flex-col gap-3 min-w-[800px] w-full cursor-pointer"
         style={style}
         onClick={() => onEdit(task)}
         tabIndex={0}
@@ -58,7 +60,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleCom
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onEdit(task); }}
       >
         <div className="flex items-center gap-2 mb-2">
-          <span className={`inline-flex items-center px-4 py-1 rounded-full text-xs font-bold text-white ${categoryBadgeColor(task.category)}`}>{categoryIcon(task.category)}{task.category}</span>
+          <span className={`inline-flex items-center px-4 py-0.5 rounded-full text-xs font-bold text-white ${categoryBadgeColor(task.category)}`}>{categoryIcon(task.category)}{task.category}</span>
           {statusBadge(task.status)}
         </div>
         <div className={`font-extrabold text-2xl ${task.status === 'completed' ? 'line-through text-gray-400' : 'text-white'}`}>{task.title}</div>
