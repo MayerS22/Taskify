@@ -4,8 +4,8 @@ import { XMarkIcon, PlusCircleIcon, PencilSquareIcon } from "@heroicons/react/24
 interface TaskModalProps {
   open: boolean;
   mode: "create" | "edit";
-  form: { title: string; description: string; category: string };
-  setForm: (form: { title: string; description: string; category: string }) => void;
+  form: { title: string; description: string; category: string; completed: boolean };
+  setForm: (form: { title: string; description: string; category: string; completed: boolean }) => void;
   formError: string;
   setFormError: (err: string) => void;
   categories: string[];
@@ -39,9 +39,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, mode, form, setForm, formEr
         className="bg-neutral-900 rounded-2xl shadow-2xl p-0 w-full max-w-md relative animate-modalIn border border-neutral-800"
         style={{ minWidth: 320 }}
       >
-        <div className={`h-2 w-full ${mode === "edit" ? "bg-indigo-600" : "bg-blue-600"} rounded-t-2xl`} />
+        <div className="h-2 w-full bg-indigo-600 rounded-t-2xl" />
         <button
-          className={`absolute top-3 right-3 text-gray-400 hover:text-white text-2xl font-bold p-1 rounded-full focus:outline-none focus:ring-2 ${mode === "edit" ? "focus:ring-indigo-400" : "focus:ring-blue-400"} bg-neutral-800`}
+          className="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl font-bold p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-neutral-800"
           onClick={onClose}
           aria-label="Close"
           type="button"
@@ -53,7 +53,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, mode, form, setForm, formEr
             {mode === "edit" ? (
               <><PencilSquareIcon className="h-7 w-7 text-indigo-500" /> Edit Task</>
             ) : (
-              <><PlusCircleIcon className="h-7 w-7 text-blue-600" /> Create New Task</>
+              <><PlusCircleIcon className="h-7 w-7 text-indigo-500" /> Create New Task</>
             )}
           </h2>
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -91,9 +91,19 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, mode, form, setForm, formEr
                 ))}
               </select>
             </div>
+            <div className="flex items-center gap-2">
+              <input
+                id="completed"
+                type="checkbox"
+                checked={form.completed}
+                onChange={e => setForm({ ...form, completed: e.target.checked })}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <label htmlFor="completed" className="text-gray-200 font-semibold select-none cursor-pointer">Completed</label>
+            </div>
             <button
               type="submit"
-              className={`flex items-center justify-center gap-2 ${mode === "edit" ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400" : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-400"} text-white px-4 py-2 rounded-xl font-bold focus:outline-none focus:ring-2 transition text-lg mt-2`}
+              className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400 text-white px-4 py-2 rounded-xl font-bold focus:outline-none focus:ring-2 transition text-lg mt-2"
             >
               {mode === "edit" ? <><PencilSquareIcon className="h-5 w-5" /> Save Changes</> : <><PlusCircleIcon className="h-5 w-5" /> Add Task</>}
             </button>
