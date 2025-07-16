@@ -28,17 +28,19 @@ export default function HomePage() {
   const [user, setUser] = useState<any>(null);
   // To-do state
   const [showModal, setShowModal] = useState(false);
-  const [todos, setTodos] = useState<{ id: number; title: string; description: string; category: string; completed: boolean }[]>([]);
-  const [form, setForm] = useState({ title: "", description: "", category: CATEGORIES[0], completed: false });
+  const [todos, setTodos] = useState<{ id: number; title: string; description: string; category: string; status: 'todo' | 'in_progress' | 'completed' }[]>([]);
+  const [form, setForm] = useState({ title: "", description: "", category: CATEGORIES[0], status: 'todo' as 'todo' | 'in_progress' | 'completed' });
   const modalRef = useRef<HTMLDivElement>(null);
   const [formError, setFormError] = useState("");
   const [editModal, setEditModal] = useState<{ open: boolean; taskId: number | null }>({ open: false, taskId: null });
-  const [editForm, setEditForm] = useState({ title: "", description: "", category: CATEGORIES[0], completed: false });
+  const [editForm, setEditForm] = useState({ title: "", description: "", category: CATEGORIES[0], status: 'todo' as 'todo' | 'in_progress' | 'completed' });
   const [editFormError, setEditFormError] = useState("");
   const editModalRef = useRef<HTMLDivElement>(null);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; taskId: number | null }>({ open: false, taskId: null });
   const deleteModalRef = useRef<HTMLDivElement>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; open: boolean }>({ message: '', type: 'success', open: false });
+  // Track the current tab for sidebar highlighting
+  const currentTab: string = 'dashboard';
 
   useEffect(() => {
     const fetchUserAndTasks = async () => {
@@ -134,7 +136,7 @@ export default function HomePage() {
       if (!token) throw new Error("Not authenticated");
       const newTask = await createTask(form, token);
       setTodos(prev => [newTask, ...prev]);
-      setForm({ title: "", description: "", category: CATEGORIES[0], completed: false });
+      setForm({ title: "", description: "", category: CATEGORIES[0], status: 'todo' });
       setShowModal(false);
       setFormError("");
       showNotification("Task added successfully", "success");
@@ -149,7 +151,9 @@ export default function HomePage() {
     try {
       const token = localStorage.getItem("access_token");
       if (!token) throw new Error("Not authenticated");
-      const updated = await updateTask(id, { ...todo, completed: !todo.completed }, token);
+      // Toggle between completed and todo (or in_progress)
+      let newStatus: 'todo' | 'in_progress' | 'completed' = todo.status === 'completed' ? 'todo' : 'completed';
+      const updated = await updateTask(id, { ...todo, status: newStatus }, token);
       setTodos(todos.map(t => t.id === id ? updated : t));
     } catch (err) {
       // Optionally show error
@@ -162,7 +166,7 @@ export default function HomePage() {
 
   // Open edit modal and prefill form
   const handleEditClick = (task: typeof todos[0]) => {
-    setEditForm({ title: task.title, description: task.description, category: task.category, completed: task.completed });
+    setEditForm({ title: task.title, description: task.description, category: task.category, status: task.status });
     setEditFormError("");
     setEditModal({ open: true, taskId: task.id });
   };
@@ -183,7 +187,7 @@ export default function HomePage() {
         todo.id === editModal.taskId ? updated : todo
       ));
       setEditModal({ open: false, taskId: null });
-      setEditForm({ title: "", description: "", category: CATEGORIES[0], completed: false });
+      setEditForm({ title: "", description: "", category: CATEGORIES[0], status: 'todo' });
       setEditFormError("");
     } catch (err) {
       setEditFormError("Failed to update task");
@@ -250,11 +254,11 @@ export default function HomePage() {
           </div>
           <div className="px-8 py-6 text-2xl font-extrabold text-white tracking-tight">Taskify</div>
           <nav className="flex flex-col gap-2 mt-4 px-4">
-            <Link href="/homepage" className="py-2 px-4 rounded-lg font-medium text-white hover:bg-neutral-800 transition sidebar-link">Dashboard</Link>
-            <Link href="/tasks" className="py-2 px-4 rounded-lg font-medium text-white hover:bg-neutral-800 transition sidebar-link">My Tasks</Link>
-            <Link href="/categories" className="py-2 px-4 rounded-lg font-medium text-white hover:bg-neutral-800 transition sidebar-link">Task Categories</Link>
-            <Link href="/settings" className="py-2 px-4 rounded-lg font-medium text-white hover:bg-neutral-800 transition sidebar-link">Settings</Link>
-            <Link href="/help" className="py-2 px-4 rounded-lg font-medium text-white hover:bg-neutral-800 transition sidebar-link">Help</Link>
+            <Link href="/homepage" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'dashboard' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>Dashboard</Link>
+            <Link href="/tasks" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'tasks' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>My Tasks</Link>
+            <Link href="/categories" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'categories' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>Task Categories</Link>
+            <Link href="/settings" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'settings' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>Settings</Link>
+            <Link href="/help" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'help' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>Help</Link>
           </nav>
         </div>
         <div className="px-4 pb-6">

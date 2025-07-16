@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
+import { TaskStatus } from '../task.entity';
 
 export class UpdateTaskDto {
   @IsOptional()
@@ -14,6 +15,6 @@ export class UpdateTaskDto {
   category?: string;
 
   @IsOptional()
-  @IsBoolean()
-  completed?: boolean;
+  @IsString()
+  status?: TaskStatus;
 } 

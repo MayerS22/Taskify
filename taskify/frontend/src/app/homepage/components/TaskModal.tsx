@@ -4,8 +4,8 @@ import { XMarkIcon, PlusCircleIcon, PencilSquareIcon } from "@heroicons/react/24
 interface TaskModalProps {
   open: boolean;
   mode: "create" | "edit";
-  form: { title: string; description: string; category: string; completed: boolean };
-  setForm: (form: { title: string; description: string; category: string; completed: boolean }) => void;
+  form: { title: string; description: string; category: string; status: 'todo' | 'in_progress' | 'completed' };
+  setForm: (form: { title: string; description: string; category: string; status: 'todo' | 'in_progress' | 'completed' }) => void;
   formError: string;
   setFormError: (err: string) => void;
   categories: string[];
@@ -91,15 +91,17 @@ const TaskModal: React.FC<TaskModalProps> = ({ open, mode, form, setForm, formEr
                 ))}
               </select>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                id="completed"
-                type="checkbox"
-                checked={form.completed}
-                onChange={e => setForm({ ...form, completed: e.target.checked })}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-              <label htmlFor="completed" className="text-gray-200 font-semibold select-none cursor-pointer">Completed</label>
+            <div>
+              <label className="block text-gray-200 font-semibold mb-1">Status</label>
+              <select
+                className="w-full px-3 py-2 border border-neutral-700 bg-neutral-800 text-white rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                value={form.status}
+                onChange={e => setForm({ ...form, status: e.target.value as 'todo' | 'in_progress' | 'completed' })}
+              >
+                <option value="todo">To Do</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
             </div>
             <button
               type="submit"
