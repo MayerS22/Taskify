@@ -19,6 +19,11 @@ export class TasksController {
     return this.tasksService.getUserTasks(req.user);
   }
 
+  @Get('by-state')
+  async getByState(@Request() req) {
+    return this.tasksService.getUserTasksByState(req.user);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: number, @Request() req) {
     return this.tasksService.getTaskById(Number(id), req.user);

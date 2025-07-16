@@ -36,6 +36,17 @@ export class TasksService {
     return taskUsers.map(tu => tu.task);
   }
 
+  // Get tasks grouped by state for the user
+  async getUserTasksByState(user: User) {
+    const taskUsers = await this.taskUserRepo.find({ where: { user }, relations: ['task'] });
+    const tasks = taskUsers.map(tu => tu.task);
+    return {
+      todo: tasks.filter(t => t.status === 'todo'),
+      in_progress: tasks.filter(t => t.status === 'in_progress'),
+      completed: tasks.filter(t => t.status === 'completed'),
+    };
+  }
+
   // Get a single task by id, only if user has access
   async getTaskById(id: number, user: User) {
     const taskUser = await this.taskUserRepo.findOne({ where: { task: { id }, user }, relations: ['task'] });

@@ -99,4 +99,13 @@ export async function deleteTask(id: number, token: string) {
   });
   if (!res.ok) throw new Error('Failed to delete task');
   return res.json();
+}
+
+export async function getTasksByState(token: string) {
+  const res = await fetch(`http://localhost:3001/tasks/by-state`, {
+    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Failed to fetch tasks by state');
+  return res.json();
 } 
