@@ -2,12 +2,14 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { getProfile } from "../api";
+import { createTask, getTasks, updateTask, deleteTask } from "../api";
 // Add Heroicons for icons
 import { XMarkIcon, PlusCircleIcon, CheckCircleIcon, TrashIcon, PencilSquareIcon, ExclamationTriangleIcon } from "@heroicons/react/24/solid";
 import { Task } from "./components/TaskCard";
 import TaskList from "./components/TaskList";
 import TaskModal from "./components/TaskModal";
 import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
+import NotificationToast from "./components/NotificationToast";
 
 const CATEGORIES = ["Work", "Personal", "Other"];
 
@@ -36,9 +38,10 @@ export default function HomePage() {
   const editModalRef = useRef<HTMLDivElement>(null);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; taskId: number | null }>({ open: false, taskId: null });
   const deleteModalRef = useRef<HTMLDivElement>(null);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; open: boolean }>({ message: '', type: 'success', open: false });
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndTasks = async () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
         setLoading(false);
@@ -47,14 +50,16 @@ export default function HomePage() {
       try {
         const data = await getProfile(token);
         setUser(data);
-        console.log('Fetched user:', data); // Debug log
+        // Fetch tasks from backend
+        const backendTasks = await getTasks(token);
+        setTodos(backendTasks);
       } catch {
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
-    fetchUser();
+    fetchUserAndTasks();
   }, []);
 
   // Close modal on outside click
@@ -112,32 +117,43 @@ export default function HomePage() {
 
   const userInitials = user && user.firstName && user.lastName ? user.firstName[0] + user.lastName[0] : "?";
 
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ message, type, open: true });
+    setTimeout(() => setNotification(n => ({ ...n, open: false })), 2000);
+  };
+
   // To-do handlers
-  const handleAddTodo = (e: React.FormEvent) => {
+  const handleAddTodo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) {
       setFormError("Title is required");
       return;
     }
-    setTodos([
-      ...todos,
-      {
-        id: Date.now(),
-        title: form.title.trim(),
-        description: form.description.trim(),
-        category: form.category,
-        completed: form.completed,
-      },
-    ]);
-    setForm({ title: "", description: "", category: CATEGORIES[0], completed: false });
-    setShowModal(false);
-    setFormError("");
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) throw new Error("Not authenticated");
+      const newTask = await createTask(form, token);
+      setTodos(prev => [newTask, ...prev]);
+      setForm({ title: "", description: "", category: CATEGORIES[0], completed: false });
+      setShowModal(false);
+      setFormError("");
+      showNotification("Task added successfully", "success");
+    } catch (err) {
+      setFormError("Failed to create task");
+    }
   };
 
-  const handleToggleComplete = (id: number) => {
-    setTodos(todos.map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
+  const handleToggleComplete = async (id: number) => {
+    const todo = todos.find(t => t.id === id);
+    if (!todo) return;
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) throw new Error("Not authenticated");
+      const updated = await updateTask(id, { ...todo, completed: !todo.completed }, token);
+      setTodos(todos.map(t => t.id === id ? updated : t));
+    } catch (err) {
+      // Optionally show error
+    }
   };
 
   const handleDelete = (id: number) => {
@@ -152,35 +168,51 @@ export default function HomePage() {
   };
 
   // Edit submit handler
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editForm.title.trim()) {
       setEditFormError("Title is required");
       return;
     }
-    setTodos(todos.map(todo =>
-      todo.id === editModal.taskId
-        ? { ...todo, title: editForm.title.trim(), description: editForm.description.trim(), category: editForm.category, completed: editForm.completed }
-        : todo
-    ));
-    setEditModal({ open: false, taskId: null });
-    setEditForm({ title: "", description: "", category: CATEGORIES[0], completed: false });
-    setEditFormError("");
+    if (editModal.taskId === null) return;
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) throw new Error("Not authenticated");
+      const updated = await updateTask(editModal.taskId, editForm, token);
+      setTodos(todos.map(todo =>
+        todo.id === editModal.taskId ? updated : todo
+      ));
+      setEditModal({ open: false, taskId: null });
+      setEditForm({ title: "", description: "", category: CATEGORIES[0], completed: false });
+      setEditFormError("");
+    } catch (err) {
+      setEditFormError("Failed to update task");
+    }
   };
 
   const handleDeleteClick = (id: number) => {
     setDeleteModal({ open: true, taskId: id });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteModal.taskId !== null) {
-      setTodos(todos.filter(todo => todo.id !== deleteModal.taskId));
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) throw new Error("Not authenticated");
+        await deleteTask(deleteModal.taskId, token);
+        setTodos(todos.filter(todo => todo.id !== deleteModal.taskId));
+        showNotification("Task deleted successfully", "success");
+      } catch (err) {
+        // Optionally show error
+      }
     }
     setDeleteModal({ open: false, taskId: null });
   };
 
   return (
     <div className="min-h-screen flex bg-black">
+      {/* Notification Toast */}
+      <NotificationToast message={notification.message} type={notification.type} open={notification.open} />
       {/* Animation styles */}
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
