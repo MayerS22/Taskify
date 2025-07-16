@@ -1,4 +1,5 @@
 import { IsString, IsOptional } from 'class-validator';
+import { TaskStatus } from '../task.entity';
 
 export class CreateTaskDto {
   @IsString()
@@ -11,4 +12,8 @@ export class CreateTaskDto {
   @IsOptional()
   @IsString()
   category?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: TaskStatus;
 } 

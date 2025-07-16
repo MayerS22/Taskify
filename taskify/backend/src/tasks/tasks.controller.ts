@@ -33,4 +33,10 @@ export class TasksController {
   async remove(@Param('id') id: number, @Request() req) {
     return this.tasksService.deleteTask(Number(id), req.user);
   }
+
+  @Delete('all')
+  async deleteAllTasks(@Request() req) {
+    // Optionally, restrict to admin or development use only
+    return this.tasksService.deleteAllTasks();
+  }
 } 

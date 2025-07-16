@@ -2,6 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDat
 import { User } from '../users/user.entity';
 import { TaskUser } from './task-user.entity';
 
+export type TaskStatus = 'todo' | 'in_progress' | 'completed';
+
 @Entity('tasks')
 export class Task {
   @PrimaryGeneratedColumn()
@@ -16,8 +18,8 @@ export class Task {
   @Column({ default: 'Other' })
   category: string;
 
-  @Column({ default: false })
-  completed: boolean;
+  @Column({ type: 'varchar', default: 'todo' })
+  status: TaskStatus;
 
   @CreateDateColumn()
   createdAt: Date;

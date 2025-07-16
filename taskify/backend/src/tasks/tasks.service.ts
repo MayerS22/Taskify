@@ -60,4 +60,12 @@ export class TasksService {
     await this.taskRepo.delete(id);
     return { message: 'Task deleted' };
   }
+
+  // Delete all tasks (for development use only)
+  async deleteAllTasks() {
+    await this.taskUserRepo.delete({});
+    await this.invitationRepo.delete({});
+    await this.taskRepo.delete({});
+    return { message: 'All tasks deleted' };
+  }
 } 
