@@ -10,6 +10,7 @@ import TaskList from "./components/TaskList";
 import TaskModal from "./components/TaskModal";
 import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
 import NotificationToast from "./components/NotificationToast";
+import { useRouter } from "next/navigation";
 
 const CATEGORIES = ["Work", "Personal", "Other"];
 
@@ -41,6 +42,7 @@ export default function HomePage() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; open: boolean }>({ message: '', type: 'success', open: false });
   // Track the current tab for sidebar highlighting
   const currentTab: string = 'dashboard';
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUserAndTasks = async () => {
@@ -299,13 +301,19 @@ export default function HomePage() {
           <div className="w-full max-w-2xl mt-8">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-white">Recent Tasks</h3>
-              <a href="/tasks" className="text-indigo-400 hover:underline text-sm font-semibold">View all</a>
+              <button
+                onClick={() => router.push('/tasks')}
+                className="text-indigo-400 hover:underline text-sm font-semibold bg-transparent border-none cursor-pointer"
+              >
+                View all
+              </button>
             </div>
             <TaskList
-              tasks={todos.slice(-5).reverse()}
+              tasks={todos.slice(0, 3)}
               onEdit={handleEditClick}
               onDelete={handleDeleteClick}
               onToggleComplete={handleToggleComplete}
+              variant="dashboard"
             />
           </div>
           {/* Create/Edit Modal */}
