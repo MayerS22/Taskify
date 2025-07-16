@@ -52,4 +52,51 @@ export async function resetPassword(token: string, newPassword: string) {
     body: JSON.stringify({ token, newPassword }),
   });
   return res.json();
+}
+
+export async function createTask(task: any, token: string) {
+  const res = await fetch('http://localhost:3001/tasks', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(task),
+  });
+  if (!res.ok) throw new Error('Failed to create task');
+  return res.json();
+}
+
+export async function getTasks(token: string) {
+  const res = await fetch('http://localhost:3001/tasks', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error('Failed to fetch tasks');
+  return res.json();
+}
+
+export async function updateTask(id: number, updates: any, token: string) {
+  const res = await fetch(`http://localhost:3001/tasks/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error('Failed to update task');
+  return res.json();
+}
+
+export async function deleteTask(id: number, token: string) {
+  const res = await fetch(`http://localhost:3001/tasks/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error('Failed to delete task');
+  return res.json();
 } 

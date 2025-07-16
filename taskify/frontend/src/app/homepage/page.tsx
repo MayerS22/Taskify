@@ -27,11 +27,11 @@ export default function HomePage() {
   // To-do state
   const [showModal, setShowModal] = useState(false);
   const [todos, setTodos] = useState<{ id: number; title: string; description: string; category: string; completed: boolean }[]>([]);
-  const [form, setForm] = useState({ title: "", description: "", category: CATEGORIES[0] });
+  const [form, setForm] = useState({ title: "", description: "", category: CATEGORIES[0], completed: false });
   const modalRef = useRef<HTMLDivElement>(null);
   const [formError, setFormError] = useState("");
   const [editModal, setEditModal] = useState<{ open: boolean; taskId: number | null }>({ open: false, taskId: null });
-  const [editForm, setEditForm] = useState({ title: "", description: "", category: CATEGORIES[0] });
+  const [editForm, setEditForm] = useState({ title: "", description: "", category: CATEGORIES[0], completed: false });
   const [editFormError, setEditFormError] = useState("");
   const editModalRef = useRef<HTMLDivElement>(null);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; taskId: number | null }>({ open: false, taskId: null });
@@ -126,10 +126,10 @@ export default function HomePage() {
         title: form.title.trim(),
         description: form.description.trim(),
         category: form.category,
-        completed: false,
+        completed: form.completed,
       },
     ]);
-    setForm({ title: "", description: "", category: CATEGORIES[0] });
+    setForm({ title: "", description: "", category: CATEGORIES[0], completed: false });
     setShowModal(false);
     setFormError("");
   };
@@ -146,7 +146,7 @@ export default function HomePage() {
 
   // Open edit modal and prefill form
   const handleEditClick = (task: typeof todos[0]) => {
-    setEditForm({ title: task.title, description: task.description, category: task.category });
+    setEditForm({ title: task.title, description: task.description, category: task.category, completed: task.completed });
     setEditFormError("");
     setEditModal({ open: true, taskId: task.id });
   };
@@ -160,11 +160,11 @@ export default function HomePage() {
     }
     setTodos(todos.map(todo =>
       todo.id === editModal.taskId
-        ? { ...todo, title: editForm.title.trim(), description: editForm.description.trim(), category: editForm.category }
+        ? { ...todo, title: editForm.title.trim(), description: editForm.description.trim(), category: editForm.category, completed: editForm.completed }
         : todo
     ));
     setEditModal({ open: false, taskId: null });
-    setEditForm({ title: "", description: "", category: CATEGORIES[0] });
+    setEditForm({ title: "", description: "", category: CATEGORIES[0], completed: false });
     setEditFormError("");
   };
 
@@ -242,7 +242,7 @@ export default function HomePage() {
       <div className="flex-1 ml-64 flex flex-col min-h-screen">
         {/* Header */}
         <header className="w-full h-20 bg-neutral-900 shadow flex items-center justify-between px-10 border-b border-neutral-800 sticky top-0 z-10">
-          <div className="text-2xl font-bold text-white">Welcome, {user ? user.firstName : "User"}!</div>
+          <div className="text-2xl font-bold text-white">Welcome Back, {user ? user.firstName : "User"}!</div>
           <div className="flex items-center gap-4">
             <span className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-extrabold text-white bg-indigo-600 border-2 border-indigo-800 shadow select-none profile-anim transition-transform duration-200" style={{fontFamily: 'Inter, sans-serif'}}>
               {userInitials}
