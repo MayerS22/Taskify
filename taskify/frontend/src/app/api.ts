@@ -22,6 +22,7 @@ export type User = {
   firstName: string;
   lastName: string;
   profile: string | null;
+  bio?: string | null;
   phone?: string | null;
   country?: string | null;
 };
@@ -107,5 +108,18 @@ export async function getTasksByState(token: string) {
     credentials: 'include',
   });
   if (!res.ok) throw new Error('Failed to fetch tasks by state');
+  return res.json();
+}
+
+export async function updateProfile(profile: any, token: string) {
+  const res = await fetch('http://localhost:3001/users/profile', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(profile),
+  });
+  if (!res.ok) throw new Error('Failed to update profile');
   return res.json();
 } 

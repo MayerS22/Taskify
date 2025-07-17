@@ -20,6 +20,9 @@ export class User {
   @Column({ type: 'text', nullable: true })
   profile: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  bio: string | null;
+
   @Column({ type: 'varchar', nullable: true })
   phone: string | null;
 

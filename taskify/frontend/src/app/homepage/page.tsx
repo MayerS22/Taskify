@@ -24,6 +24,12 @@ const categoryBadgeColor = (category: string) => {
   }
 };
 
+const getProfileImageUrl = (profile: string | null) => {
+  if (!profile) return null;
+  if (profile.startsWith('http')) return profile;
+  return `http://localhost:3001${profile}`;
+};
+
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -120,6 +126,7 @@ export default function HomePage() {
   }
 
   const userInitials = user && user.firstName && user.lastName ? user.firstName[0] + user.lastName[0] : "?";
+  const profileImgUrl = user ? getProfileImageUrl(user.profile) : null;
 
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type, open: true });
@@ -216,7 +223,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-black">
+    <div className="min-h-screen flex bg-gradient-to-br from-indigo-900 via-black to-neutral-900">
       {/* Notification Toast */}
       <NotificationToast message={notification.message} type={notification.type} open={notification.open} />
       {/* Animation styles */}
@@ -242,11 +249,11 @@ export default function HomePage() {
         <div>
           <div className="flex flex-col items-center gap-2 pt-8 pb-6 border-b border-neutral-800">
             {/* Profile Picture */}
-            {user && user.profilePic ? (
-              <img src={user.profilePic} alt="Profile" className="w-20 h-20 rounded-full object-cover border-4 border-blue-800 shadow profile-anim transition-transform duration-200" />
+            {profileImgUrl ? (
+              <img src={profileImgUrl || undefined} alt="Profile" className="w-20 h-20 rounded-full object-cover border-4 border-blue-800 shadow profile-anim transition-transform duration-200" />
             ) : (
               <span className="w-20 h-20 rounded-full flex items-center justify-center text-4xl font-extrabold text-white bg-indigo-600 border-4 border-indigo-800 shadow select-none profile-anim transition-transform duration-200" style={{fontFamily: 'Inter, sans-serif'}}>
-                {userInitials}
+                {user && user.firstName ? user.firstName[0] : "?"}
               </span>
             )}
             {/* User Name */}
@@ -282,9 +289,13 @@ export default function HomePage() {
         <header className="w-full h-20 bg-neutral-900 shadow flex items-center justify-between px-10 border-b border-neutral-800 sticky top-0 z-10">
           <div className="text-2xl font-bold text-white">Welcome Back, {user ? user.firstName : "User"}!</div>
           <div className="flex items-center gap-4">
-            <span className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-extrabold text-white bg-indigo-600 border-2 border-indigo-800 shadow select-none profile-anim transition-transform duration-200" style={{fontFamily: 'Inter, sans-serif'}}>
-              {userInitials}
-            </span>
+            {profileImgUrl ? (
+              <img src={profileImgUrl || undefined} alt="Profile" className="w-12 h-12 rounded-full object-cover border-2 border-indigo-800 shadow select-none profile-anim transition-transform duration-200" />
+            ) : (
+              <span className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-extrabold text-white bg-indigo-600 border-2 border-indigo-800 shadow select-none profile-anim transition-transform duration-200" style={{fontFamily: 'Inter, sans-serif'}}>
+                {user && user.firstName ? user.firstName[0] : "?"}
+              </span>
+            )}
           </div>
         </header>
         {/* Main Content */}

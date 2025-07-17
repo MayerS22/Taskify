@@ -247,7 +247,7 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-black">
+    <div className="min-h-screen flex bg-gradient-to-br from-indigo-900 via-black to-neutral-900">
       <NotificationToast message={notification.message} type={notification.type} open={notification.open} />
       {/* Sidebar (reuse from tasks page) */}
       <aside className="w-64 bg-neutral-900 shadow-2xl flex flex-col justify-between h-screen fixed left-0 top-0 z-20 border-r border-neutral-800">

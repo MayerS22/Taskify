@@ -10,7 +10,14 @@
     "frontend"
   ],
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
+    "@nestjs/platform-express": "^11.1.4",
+    "multer": "^2.0.1",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/multer": "^2.0.0"
   }
 }
