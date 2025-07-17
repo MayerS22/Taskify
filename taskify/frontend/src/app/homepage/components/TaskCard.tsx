@@ -53,11 +53,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleCom
       <div
         className="relative group bg-gradient-to-br from-neutral-800 via-neutral-900 to-black rounded-2xl shadow-2xl border border-neutral-700 p-6 transition-transform transform hover:scale-[1.025] hover:shadow-indigo-700/30 flex flex-col gap-3 min-w-[800px] w-full cursor-pointer"
         style={style}
-        onClick={() => onEdit(task)}
+        onClick={() => { console.log('Card clicked', task); onEdit(task); }}
         tabIndex={0}
         role="button"
         aria-label={`Edit task: ${task.title}`}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onEdit(task); }}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { console.log('Card keydown edit', task); onEdit(task); } }}
       >
         <div className="flex items-center gap-2 mb-2">
           <span className={`inline-flex items-center px-4 py-0.5 rounded-full text-xs font-bold text-white ${categoryBadgeColor(task.category)}`}>{categoryIcon(task.category)}{task.category}</span>
@@ -68,21 +68,21 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleCom
         <div className="flex items-center gap-3 mt-2">
           <button
             className="p-2 rounded-full border border-indigo-700 bg-indigo-600 hover:bg-indigo-700 text-white transition shadow"
-            onClick={e => { e.stopPropagation(); onEdit(task); }}
+            onClick={e => { e.stopPropagation(); console.log('Edit icon clicked', task); onEdit(task); }}
             title="Edit"
           >
             <PencilSquareIcon className="h-5 w-5" />
           </button>
           <button
             className="p-2 rounded-full border border-red-700 bg-red-600 hover:bg-red-700 text-white transition shadow"
-            onClick={e => { e.stopPropagation(); onDelete(task.id); }}
+            onClick={e => { e.stopPropagation(); console.log('Delete icon clicked', task.id); onDelete(task.id); }}
             title="Delete"
           >
             <TrashIcon className="h-5 w-5" />
           </button>
           <button
             className={`p-2 rounded-full border ${task.status === 'completed' ? 'border-green-700 bg-green-600' : 'border-gray-700 bg-gray-600'} hover:bg-green-700 text-white transition shadow`}
-            onClick={e => { e.stopPropagation(); onToggleComplete(task.id); }}
+            onClick={e => { e.stopPropagation(); console.log('Done icon clicked', task.id); onToggleComplete(task.id); }}
             title={task.status === 'completed' ? "Mark as To Do" : "Mark as Completed"}
           >
             <CheckCircleIcon className="h-5 w-5" />
@@ -96,11 +96,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleCom
     <div
       className="flex flex-col sm:flex-row sm:items-center justify-between bg-neutral-800 rounded-xl shadow-lg p-4 border border-neutral-700 transition group min-h-[64px] cursor-pointer hover:scale-[1.015] hover:shadow-indigo-700/20 duration-200"
       style={style}
-      onClick={() => onEdit(task)}
+      onClick={() => { console.log('Card clicked', task); onEdit(task); }}
       tabIndex={0}
       role="button"
       aria-label={`Edit task: ${task.title}`}
-      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onEdit(task); }}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { console.log('Card keydown edit', task); onEdit(task); } }}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
@@ -113,21 +113,21 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleCom
       <div className="flex items-center gap-2 mt-1 sm:mt-0 sm:ml-4">
         <button
           className="p-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white transition"
-          onClick={e => { e.stopPropagation(); onEdit(task); }}
+          onClick={e => { e.stopPropagation(); console.log('Edit icon clicked', task); onEdit(task); }}
           title="Edit"
         >
           <PencilSquareIcon className="h-4 w-4" />
         </button>
         <button
           className="p-1.5 rounded-full bg-red-600 hover:bg-red-700 text-white transition"
-          onClick={e => { e.stopPropagation(); onDelete(task.id); }}
+          onClick={e => { e.stopPropagation(); console.log('Delete icon clicked', task.id); onDelete(task.id); }}
           title="Delete"
         >
           <TrashIcon className="h-4 w-4" />
         </button>
         <button
           className={`p-1.5 rounded-full ${task.status === 'completed' ? 'bg-green-600' : 'bg-gray-600'} hover:bg-green-700 text-white transition`}
-          onClick={e => { e.stopPropagation(); onToggleComplete(task.id); }}
+          onClick={e => { e.stopPropagation(); console.log('Done icon clicked', task.id); onToggleComplete(task.id); }}
           title={task.status === 'completed' ? "Mark as To Do" : "Mark as Completed"}
         >
           <CheckCircleIcon className="h-4 w-4" />

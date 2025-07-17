@@ -75,6 +75,7 @@ export default function MyTasksPage() {
     }
   };
 
+  // Handler for editing a task
   const handleEditClick = (task: Task) => {
     setEditForm({ title: task.title, description: task.description, category: task.category, status: task.status });
     setEditFormError("");
@@ -103,6 +104,7 @@ export default function MyTasksPage() {
     }
   };
 
+  // Handler for deleting a task
   const handleDeleteClick = (id: number) => {
     setDeleteModal({ open: true, taskId: id });
   };
@@ -120,6 +122,23 @@ export default function MyTasksPage() {
       }
     }
     setDeleteModal({ open: false, taskId: null });
+  };
+
+  // Handler for toggling complete
+  const handleToggleComplete = (id: number) => {
+    const todo = todos.find(t => t.id === id);
+    if (!todo) return;
+    (async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) throw new Error("Not authenticated");
+        let newStatus: 'todo' | 'in_progress' | 'completed' = todo.status === 'completed' ? 'todo' : 'completed';
+        const updated = await updateTask(id, { ...todo, status: newStatus }, token);
+        setTodos(todos.map(t => t.id === id ? updated : t));
+      } catch (err) {
+        // Optionally show error
+      }
+    })();
   };
 
   // DnD handler
@@ -194,30 +213,13 @@ export default function MyTasksPage() {
           </button>
         </header>
         <main className="flex-1 flex flex-col items-center justify-start p-10 animate-fadeInUp">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
-              <TaskList
-                tasks={todos}
-                onEdit={handleEditClick}
-                onDelete={handleDeleteClick}
-                onToggleComplete={async (id: number) => {
-                  const todo = todos.find(t => t.id === id);
-                  if (!todo) return;
-                  try {
-                    const token = localStorage.getItem("access_token");
-                    if (!token) throw new Error("Not authenticated");
-                    let newStatus: 'todo' | 'in_progress' | 'completed' = todo.status === 'completed' ? 'todo' : 'completed';
-                    const updated = await updateTask(id, { ...todo, status: newStatus }, token);
-                    setTodos(todos.map(t => t.id === id ? updated : t));
-                  } catch (err) {
-                    // Optionally show error
-                  }
-                }}
-                variant="mytasks"
-                dnd
-              />
-            </SortableContext>
-          </DndContext>
+          <TaskList
+            tasks={todos}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteClick}
+            onToggleComplete={handleToggleComplete}
+            variant="mytasks"
+          />
         </main>
         <TaskModal
           open={showModal || editModal.open}

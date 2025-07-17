@@ -2,15 +2,14 @@
 import React, { useEffect, useState } from "react";
 import { getProfile, getTasksByState, createTask, updateTask } from "../api";
 import { Task } from "../homepage/components/TaskCard";
-import TaskCard from "../homepage/components/TaskCard";
 import TaskModal from "../homepage/components/TaskModal";
 import NotificationToast from "../homepage/components/NotificationToast";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import TaskCategoryCard from "./TaskCategoryCard";
 
 const CATEGORIES = ["Work", "Personal", "Other"];
 const STATES = [
@@ -18,28 +17,6 @@ const STATES = [
   { key: 'in_progress', label: 'In Progress' },
   { key: 'completed', label: 'Done' },
 ];
-
-function SortableTaskCard({ task, ...props }: { task: Task; onEdit: any; onDelete: any; onToggleComplete: any; variant: string; dnd?: boolean }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} {...props} />
-    </div>
-  );
-}
-
-function DroppableColumn({ id, children }: { id: string; children: React.ReactNode }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
-  return (
-    <div ref={setNodeRef} className={isOver ? 'bg-neutral-800/80' : ''} style={{ minHeight: 200 }}>
-      {children}
-    </div>
-  );
-}
 
 export default function CategoriesPage() {
   const [loading, setLoading] = useState(true);
@@ -50,6 +27,7 @@ export default function CategoriesPage() {
   const [formError, setFormError] = useState("");
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; open: boolean }>({ message: '', type: 'success', open: false });
   const sensors = useSensors(useSensor(PointerSensor));
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const currentTab: string = 'categories';
   const router = useRouter();
 
@@ -102,45 +80,126 @@ export default function CategoriesPage() {
     }
   };
 
-  // DnD handler for moving between columns
-  const handleDragEnd = async (event: any) => {
+  // Helper to reorder tasks in a column
+  function reorder(list: Task[], startIndex: number, endIndex: number) {
+    const result = Array.from(list);
+    const [removed] = result.splice(startIndex, 1);
+    result.splice(endIndex, 0, removed);
+    return result;
+  }
+
+  // DnD handlers
+  const handleDragStart = (event: any) => {
+    const { active } = event;
+    const task = Object.values(tasksByState).flat().find(t => t.id === active.id);
+    setActiveTask(task || null);
+  };
+  const handleDragEnd = (event: any) => {
     const { active, over } = event;
-    if (!over) return;
-    const allTaskIds = Object.values(tasksByState).flat().map(t => t.id);
-    let toState = null;
-    if (['todo', 'in_progress', 'completed'].includes(over.id)) {
-      toState = over.id;
-    } else if (allTaskIds.includes(over.id)) {
-      // Find which column the task is in
-      toState = Object.keys(tasksByState).find(state => tasksByState[state as keyof typeof tasksByState].some(t => t.id === over.id));
+    setActiveTask(null);
+    if (!over || active.id === over.id) return;
+    // Find source column
+    const fromCol = Object.keys(tasksByState).find(state => tasksByState[state as keyof typeof tasksByState].some(t => t.id === active.id));
+    // Check if dropped on a column or a card
+    const columnKeys = STATES.map(s => s.key);
+    let toCol = columnKeys.includes(over.id) ? over.id : null;
+    if (!toCol) {
+      // If dropped on a card, find its column
+      toCol = Object.keys(tasksByState).find(state => tasksByState[state as keyof typeof tasksByState].some(t => t.id === over.id));
     }
-    const fromState = Object.keys(tasksByState).find(state => tasksByState[state as keyof typeof tasksByState].some(t => t.id === active.id));
-    if (!fromState || !toState) return;
-    const task = tasksByState[fromState as keyof typeof tasksByState].find(t => t.id === active.id);
+    if (!fromCol || !toCol) return;
+    if (fromCol === toCol) {
+      // Reorder within column
+      const oldIndex = tasksByState[fromCol as keyof typeof tasksByState].findIndex(t => t.id === active.id);
+      const newIndex = tasksByState[toCol as keyof typeof tasksByState].findIndex(t => t.id === over.id);
+      setTasksByState(prev => ({
+        ...prev,
+        [fromCol]: arrayMove(prev[fromCol as keyof typeof prev], oldIndex, newIndex),
+      }));
+    } else {
+      // Move to another column and update state
+      const task = tasksByState[fromCol as keyof typeof tasksByState].find(t => t.id === active.id);
+      if (!task) return;
+      const updatedTask = { ...task, status: toCol };
+      setTasksByState(prev => ({
+        ...prev,
+        [fromCol]: prev[fromCol as keyof typeof prev].filter(t => t.id !== task.id),
+        [toCol]: [updatedTask, ...prev[toCol as keyof typeof prev]],
+      }));
+      // Persist status change
+      (async () => {
+        try {
+          const token = localStorage.getItem("access_token");
+          if (!token) throw new Error("Not authenticated");
+          await updateTask(task.id, { ...task, status: toCol }, token);
+        } catch {}
+      })();
+    }
+  };
+  const handleDragCancel = () => setActiveTask(null);
+
+  // Handler for editing a task
+  const handleEditClick = (task: Task) => {
+    setForm({ title: task.title, description: task.description, category: task.category, status: task.status });
+    setFormError("");
+    setModalState({ open: true, status: task.status as 'todo' | 'in_progress' | 'completed' });
+  };
+
+  // Handler for deleting a task
+  const handleDeleteClick = (id: number) => {
+    const task = Object.values(tasksByState).flat().find(t => t.id === id);
+    if (task) setModalState({ open: true, status: task.status as 'todo' | 'in_progress' | 'completed' });
+  };
+
+  // Handler for toggling complete
+  const handleToggleComplete = (id: number) => {
+    const task = Object.values(tasksByState).flat().find(t => t.id === id);
     if (!task) return;
-    if (fromState !== toState) {
+    (async () => {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) throw new Error("Not authenticated");
-        const updated = await updateTask(task.id, { ...task, status: toState }, token);
-        setTasksByState(prev => ({
-          ...prev,
-          [fromState]: prev[fromState as keyof typeof prev].filter(t => t.id !== task.id),
-          [toState]: [updated, ...prev[toState as keyof typeof prev]],
-        }));
-        showNotification("Task state updated", "success");
+        let newStatus: 'todo' | 'in_progress' | 'completed' = task.status === 'completed' ? 'todo' : 'completed';
+        const updated = await updateTask(task.id, { ...task, status: newStatus }, token);
+        setTasksByState(prev => {
+          let newTasks = { ...prev };
+          newTasks[task.status] = newTasks[task.status].filter(t => t.id !== task.id);
+          newTasks[newStatus] = [updated, ...newTasks[newStatus]];
+          return newTasks;
+        });
+        showNotification("Task status updated", "success");
       } catch {
-        showNotification("Failed to update task state", "error");
+        showNotification("Failed to update status", "error");
       }
-    } else if (fromState === toState && over.id !== active.id) {
-      // Reorder within the same column
-      const oldIndex = tasksByState[fromState as keyof typeof tasksByState].findIndex(t => t.id === active.id);
-      const newIndex = tasksByState[fromState as keyof typeof tasksByState].findIndex(t => t.id === over.id);
-      setTasksByState(prev => ({
-        ...prev,
-        [fromState]: arrayMove(prev[fromState as keyof typeof prev], oldIndex, newIndex),
-      }));
-    }
+    })();
+  };
+
+  // Add the onMove handler
+  const handleMoveTask = (id: number, direction: 'left' | 'right') => {
+    // Find the current state and index
+    const stateKeys = STATES.map(s => s.key);
+    const currentState = stateKeys.find(state => tasksByState[state as keyof typeof tasksByState].some(t => t.id === id));
+    if (!currentState) return;
+    const currentIndex = stateKeys.indexOf(currentState);
+    let newIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= stateKeys.length) return;
+    const newState = stateKeys[newIndex];
+    const task = tasksByState[currentState as keyof typeof tasksByState].find(t => t.id === id);
+    if (!task) return;
+    const updatedTask = { ...task, status: newState };
+    setTasksByState(prev => ({
+      ...prev,
+      [currentState]: prev[currentState as keyof typeof prev].filter(t => t.id !== id),
+      [newState]: [updatedTask, ...prev[newState as keyof typeof prev]],
+    }));
+    // Persist status change
+    (async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) throw new Error("Not authenticated");
+        await updateTask(task.id, { ...task, status: newState }, token);
+      } catch {}
+    })();
   };
 
   if (loading) {
@@ -152,6 +211,40 @@ export default function CategoriesPage() {
   }
 
   const userInitials = user && user.firstName && user.lastName ? user.firstName[0] + user.lastName[0] : "?";
+
+  // Add SortableTaskCategoryCard wrapper
+  function SortableTaskCategoryCard({ task, onDelete, onMove, onEdit }: any) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+    const style: React.CSSProperties = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      zIndex: isDragging ? 50 : undefined,
+      opacity: isDragging ? 0.7 : 1,
+      position: 'relative',
+    };
+    return (
+      <div ref={setNodeRef} style={style}>
+        <TaskCategoryCard
+          task={task}
+          onDelete={onDelete}
+          onMove={onMove}
+          onEdit={onEdit}
+          dragHandleProps={listeners}
+          dragAttributes={attributes}
+        />
+      </div>
+    );
+  }
+
+  // Add DroppableColumn component
+  function DroppableColumn({ id, children }: { id: string; children: React.ReactNode }) {
+    const { setNodeRef, isOver } = useDroppable({ id });
+    return (
+      <div ref={setNodeRef} className={isOver ? 'bg-neutral-800/80' : ''}>
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-black">
@@ -174,7 +267,7 @@ export default function CategoriesPage() {
           <nav className="flex flex-col gap-2 mt-4 px-4">
             <Link href="/homepage" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'dashboard' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>Dashboard</Link>
             <Link href="/tasks" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'tasks' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>My Tasks</Link>
-            <Link href="/categories" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'categories' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>Task Categories</Link>
+            <Link href="/categories" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'categories' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>Kanban Board</Link>
             <Link href="/settings" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'settings' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>Settings</Link>
             <Link href="/help" className={`py-2 px-4 rounded-lg font-medium transition sidebar-link ${currentTab === 'help' ? 'bg-indigo-600 text-white' : 'text-white hover:bg-neutral-800'}`}>Help</Link>
           </nav>
@@ -194,22 +287,28 @@ export default function CategoriesPage() {
       {/* Main Content Area */}
       <div className="flex-1 ml-64 flex flex-col min-h-screen">
         <header className="w-full h-20 bg-neutral-900 shadow flex items-center justify-between px-10 border-b border-neutral-800 sticky top-0 z-10">
-          <div className="text-2xl font-bold text-white">Task Categories</div>
+          <div className="text-2xl font-bold text-white">Kanban Board</div>
         </header>
         <main className="flex-1 flex flex-col items-center justify-start p-10 animate-fadeInUp">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <div className="w-full flex gap-8 justify-center">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+            <div className="w-full flex gap-8 justify-center items-start overflow-x-auto">
               {STATES.map(state => (
-                <SortableContext key={state.key} items={tasksByState[state.key as keyof typeof tasksByState].map(t => t.id)} strategy={verticalListSortingStrategy} id={state.key}>
-                  <div className="flex-1 bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-800 p-4 flex flex-col min-w-[320px] max-w-[400px]">
+                <DroppableColumn key={state.key} id={state.key}>
+                  <div className="w-[384px] min-w-[384px] max-w-[384px] bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-800 p-4 flex flex-col">
                     <div className="text-xl font-bold text-white mb-4 text-center">{state.label}</div>
-                    <DroppableColumn id={state.key}>
+                    <SortableContext items={tasksByState[state.key as keyof typeof tasksByState].map(t => t.id)} strategy={verticalListSortingStrategy}>
                       <div className="flex flex-col gap-4 min-h-[200px]">
                         {tasksByState[state.key as keyof typeof tasksByState].map(task => (
-                          <SortableTaskCard key={task.id} task={task} onEdit={() => {}} onDelete={() => {}} onToggleComplete={() => {}} variant="kanban" dnd />
+                          <SortableTaskCategoryCard
+                            key={task.id}
+                            task={task}
+                            onDelete={handleDeleteClick}
+                            onMove={handleMoveTask}
+                            onEdit={handleEditClick}
+                          />
                         ))}
                       </div>
-                    </DroppableColumn>
+                    </SortableContext>
                     <button
                       className="mt-6 w-full bg-indigo-600 text-white py-2 rounded-xl font-bold shadow hover:bg-indigo-700 transition flex items-center justify-center gap-2"
                       onClick={() => {
@@ -220,9 +319,19 @@ export default function CategoriesPage() {
                       + Add Task
                     </button>
                   </div>
-                </SortableContext>
+                </DroppableColumn>
               ))}
             </div>
+            <DragOverlay>
+              {activeTask ? (
+                <div style={{ width: 384, minWidth: 384, maxWidth: 384, zIndex: 100 }}>
+                  <TaskCategoryCard
+                    task={activeTask}
+                    onDelete={handleDeleteClick}
+                  />
+                </div>
+              ) : null}
+            </DragOverlay>
           </DndContext>
           <TaskModal
             open={modalState.open}
