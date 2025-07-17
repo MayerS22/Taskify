@@ -7,10 +7,9 @@ import NotificationToast from "../homepage/components/NotificationToast";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import Link from "next/link";
 import { useRouter } from "next/navigation";  
+import TaskCategoryCard from "./TaskCategoryCard";
 import Sidebar from "../components/Sidebar";
-import TaskCategoryCard from "../kubran-board/TaskCategoryCard";
 
 const CATEGORIES = ["Work", "Personal", "Other"];
 const STATES = [
@@ -35,7 +34,7 @@ export default function CategoriesPage() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error'; open: boolean }>({ message: '', type: 'success', open: false });
   const sensors = useSensors(useSensor(PointerSensor));
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const currentTab: string = 'categories';
+  const currentTab: string = 'kubran-board';
   const router = useRouter();
 
   useEffect(() => {
